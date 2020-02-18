@@ -106,10 +106,6 @@
       
       <!-- reward -->
       
-      <div id="reward-btn">
-        打赏
-      </div>
-      
     </div>
     
     
@@ -188,6 +184,15 @@
   
   
   <nav class="article-nav">
+    
+      <a href="/2020/02/18/%E5%B0%9D%E8%AF%95%E4%BA%8C/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            尝试二
+          
+        </div>
+      </a>
     
     
       <a href="/2020/02/16/hello-world/" class="article-nav-link">
@@ -442,7 +447,7 @@
 
 <script>
   var ayerConfig = {
-    mathjax: false
+    mathjax: true
   }
 </script>
 
@@ -562,6 +567,25 @@
 </script>
 
 
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+      tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+  });
+
+  MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+      for(i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.6/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
 
 <script type="text/javascript" src="https://js.users.51.la/20544303.js"></script>
