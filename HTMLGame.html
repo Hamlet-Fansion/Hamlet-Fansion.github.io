@@ -1,3 +1,4 @@
+<!-- https://github.com/zwh-creater/HTMLGAMES/edit/main/Game01.html -->
 <html>
 <head>
     <style type="text/css">
@@ -136,6 +137,8 @@
 
         var GameState = 0;
 
+        var waittime = 400;
+
         function update()
         {
             if(GameState==1)
@@ -152,12 +155,30 @@
             content.fillText(""+score,1200,1000);
             content.fillStyle = "#00ffff";
             content.fillRect(eat.x-20,eat.y-20,40,40);
+            content.font = "50px Arial";
+            content.fillText(""+(waittime/10),eat.x-(waittime>=100?50:20),eat.y+(eat.y>900?-30:70));
+            if(waittime--<=0)
+            {
+                score=score-1;
+                if(score<0)
+                {
+                    GameState=1;
+                }
+                eat.x=Math.random()*3000;
+                eat.y=Math.random()*1800;
+                while(HitPlane(pl,eat)){
+                    eat.x=Math.random()*3000;
+                    eat.y=Math.random()*1800;
+                }
+                waittime=400;
+            }
             if(HitPlane(pl,eat))
             {
                 while(HitPlane(pl,eat)){
                     eat.x=Math.random()*3000;
                     eat.y=Math.random()*1800;
                 }
+                waittime=400;
                 score+=1;
                 content.fillStyle="#ff0000";
             }
@@ -263,6 +284,7 @@
                     hurt_end=hurt_start;
                     GameState=0;
                     score=0;
+                    waittime=400;    
                     break;
         
                 case 74://J
