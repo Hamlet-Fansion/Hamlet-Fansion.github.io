@@ -1,0 +1,334 @@
+<html>
+<head>
+    <style type="text/css">
+        div.mind {
+            width: 100%;
+            height: 100%;
+            text-align:center;
+            margin-top:100px;
+        }
+        canvas.mainc{
+            width:1500px;
+            height:900px;
+        }
+    </style>
+    <script type="text/javascript">
+        var canv;
+        var content;
+
+        var Vec = function(x,y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        function AddVV(v1,v2)
+        {
+            return new Vec(v1.x+v2.x,v1.y+v2.y);
+        }
+
+        function SubVV(v1,v2)
+        {
+            return new Vec(v1.x-v2.x,v1.y-v2.y);
+        }
+
+        function DotVV(v1,v2)
+        {
+            return v1.x*v2.x+v1.y*v2.y;
+        }
+
+        function MulRV(r,v)
+        {
+            return new Vec(r*v.x,r*v.y);
+        }
+
+        var Mat = function(a11,a12,a21,a22)
+        {
+            this.col1 = new Vec(a11,a21);
+            this.col2 = new Vec(a12,a22);
+        }
+
+        function MulMV(m,v)
+        {
+            return new Vec(DotVV(m.col1,v),DotVV(m.col2,v));
+        }
+
+        function Normalize(n,v)
+        {
+            if(DotVV(v,v)==0.0)
+            {
+                return new Vec(0.0,0.0);
+            }
+            length = Math.sqrt(DotVV(v,v));
+            return new Vec(n*v.x/length,n*v.y/length);
+        }
+
+        function RotationMat(r)
+        {
+            return new Mat(Math.cos(r),Math.sin(r),-Math.sin(r),Math.cos(r));
+        }
+
+        var Plane = function()
+        {
+            this.Position = new Vec(200.0,200.0);
+            this.Velocity = new Vec(0.0,0.0);
+            this.Omega = 0;
+            this.Shape = new Vec(100.0,0.0);
+        }
+
+        function ShowPlane(plane)
+        {
+            content.fillStyle = "#00ff00";
+            content.lineWidth = 12;
+            content.beginPath();
+            content.moveTo(plane.Position.x+plane.Shape.x,plane.Position.y+plane.Shape.y);
+            content.lineTo(plane.Position.x+plane.Shape.y,plane.Position.y-plane.Shape.x);
+            content.lineTo(plane.Position.x-plane.Shape.x,plane.Position.y-plane.Shape.y);
+            content.lineTo(plane.Position.x-plane.Shape.y,plane.Position.y+plane.Shape.x);
+            content.fill();
+            content.beginPath();
+            content.moveTo(plane.Position.x,plane.Position.y);
+            content.lineTo(plane.Position.x+plane.Shape.x,plane.Position.y+plane.Shape.y);
+            content.stroke();
+        }
+
+        function HitPlane(plane,point)
+        {
+            var Delta = SubVV(point,plane.Position);
+            var TempVec = Normalize(1,plane.Shape);
+            var TempMat = new Mat(TempVec.x,TempVec.y,-TempVec.y,TempVec.x);
+            Delta = MulMV(TempMat,Delta);
+            var Border = Math.sqrt(DotVV(plane.Shape,plane.Shape));
+            if(-Border<Delta.x&&Delta.x<Border&&-Border<Delta.y&&Delta.y<Border)
+            {               
+                return true;
+            }
+            return false;
+        }
+
+        var pl = new Plane();
+
+        var eat = new Vec(400.0,400.0);
+
+        var VecNode = function(x,y)
+        {
+            this.prev = null
+            this.v = new Vec(x,y);
+            this.next = null;
+        }
+
+        var hurt_start = new VecNode(-1000,0);
+        var hurt_end = hurt_start;
+
+        function GenHurt()
+        {
+            hurt_end.next = new VecNode(Math.random()*3000,-10);
+            hurt_end.next.prev=hurt_end;
+            hurt_end=hurt_end.next;
+        }
+
+        var score = 0;
+
+        var W_PRESS;
+        var A_PRESS;
+        var S_PRESS;
+        var D_PRESS;
+
+        var GameState = 0;
+
+        function update()
+        {
+            if(GameState==1)
+            {
+                content.fillStyle = "#991111";
+                content.font = "400px Arial";
+                content.fillText("GAME OVER",300,1000);
+                return;
+            }
+            content.fillStyle = "#000000";
+            content.fillRect(0,0,3000,1800);
+            content.fillStyle = "#119911";
+            content.font = "500px Arial";
+            content.fillText(""+score,1200,1000);
+            content.fillStyle = "#00ffff";
+            content.fillRect(eat.x-20,eat.y-20,40,40);
+            if(HitPlane(pl,eat))
+            {
+                while(HitPlane(pl,eat)){
+                    eat.x=Math.random()*3000;
+                    eat.y=Math.random()*1800;
+                }
+                score+=1;
+                content.fillStyle="#ff0000";
+            }
+
+            if(Math.random()>0.99)
+            {
+                GenHurt();
+            }
+
+            Enemy=hurt_start.next;
+            while(Enemy!=null)
+            {
+                content.fillStyle = "#ff0000";
+                content.fillRect(Enemy.v.x-20,Enemy.v.y-20,40,40);
+                if(HitPlane(pl,Enemy.v))
+                {
+                    GameState=1;
+                }
+                Enemy.v.y+=3;
+                if(Enemy.v.y>1900)
+                {
+                    Enemy.prev.next=Enemy.next;
+                    Enemy.next.prev=Enemy.prev;
+                    var DelE=Enemy;
+                    Enemy=Enemy.prev;
+                    delete DelE;
+                }
+                Enemy = Enemy.next;
+            }
+
+            ShowPlane(pl);
+            pl.Omega*=0.5;
+            pl.Velocity=MulRV(0.9,pl.Velocity);
+            pl.Position=AddVV(pl.Position,pl.Velocity);
+            pl.Shape=MulMV(RotationMat(pl.Omega),pl.Shape);
+            if(W_PRESS){
+                pl.Velocity=Normalize(10,pl.Shape);
+            }
+            if(A_PRESS){
+                pl.Omega=-0.1;
+            }
+            if(S_PRESS){
+                pl.Velocity=Normalize(-10,pl.Shape);
+            }
+            if(D_PRESS){
+                pl.Omega=0.1;
+            }
+
+            if(pl.Position.x>3000&&pl.Velocity.x>0)
+            {
+                pl.Velocity.x*=-1;
+            }
+            if(pl.Position.x<0&&pl.Velocity.x<0)
+            {
+                pl.Velocity.x*=-1;
+            }
+            if(pl.Position.y>1800&&pl.Velocity.y>0)
+            {
+                pl.Velocity.y*=-1;
+            }
+            if(pl.Position.y<0&&pl.Velocity.y<0)
+            {
+                pl.Velocity.y*=-1;
+            }
+
+        }
+        
+        var mat1; 
+        var mat2; 
+
+        window.onkeydown = function(e)
+        {
+            e = e || window.event;
+            switch(e.keyCode)
+            {
+                case 87://W
+                    W_PRESS=true;
+                    break;
+        
+                case 65://A
+                    A_PRESS=true;
+                    break;
+        
+                case 83://S
+                    S_PRESS=true;
+                    break;
+        
+                case 68://D
+                    D_PRESS=true;
+                    break;
+
+                case 32://Space
+                    break;
+                
+                case 82://R
+                    Enemy = hurt_end;
+                    while(Enemy.prev!=null)
+                    {
+                        Enemy=Enemy.prev;
+                        delete Enemy.next;
+                    }
+                    hurt_start.next=null;
+                    hurt_end=hurt_start;
+                    GameState=0;
+                    score=0;
+                    break;
+        
+                case 74://J
+                    break;
+        
+                case 75://K
+                    break;
+        
+                case 76://L
+                    break;
+            }
+        }
+
+        window.onkeyup = function(e)
+        {
+            e = e || window.event;
+            switch(e.keyCode)
+            {
+                case 87://W
+                    W_PRESS=false;
+                    break;
+        
+                case 65://A
+                    A_PRESS=false;
+                    break;
+        
+                case 83://S
+                    S_PRESS=false;
+                    break;
+        
+                case 68://D
+                    D_PRESS=false;
+                    break;
+
+                case 32://Space
+                    break;
+        
+                case 74://J
+                    break;
+        
+                case 75://K
+                    break;
+        
+                case 76://L
+                    break;
+            }
+        }
+
+        window.onload = function()
+        {
+            canv = document.getElementById("maincanv");
+            content = canv.getContext("2d");
+            debugtext = document.getElementById("debugdiv");
+            mat1 = new Mat(Math.cos(0.1),-Math.sin(0.1),Math.sin(0.1),Math.cos(0.1));
+            mat2 = new Mat(Math.cos(0.1),Math.sin(0.1),-Math.sin(0.1),Math.cos(0.1));
+            setInterval("update()",10);
+        }
+
+    </script>
+</head>
+<body>
+    <div id="maindiv" class="mind">
+        <canvas id="maincanv" class="mainc" width="3000" height="1800"/>
+    </div>
+    <div id="debugdiv">
+
+    </div>
+</body>
+</html>
